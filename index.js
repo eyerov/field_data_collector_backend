@@ -59,10 +59,20 @@ app.post('/data', (req, res) => {
             existingRows.push(flattenedRow);
         }
 
-        const headers = Object.keys(existingRows[0] || flattenedRow);
+        const allHeaders = new Set();
+        existingRows.forEach(row => {
+          Object.keys(row).forEach(header => {
+            allHeaders.add(header);
+          });
+        });
+        Object.keys(flattenedRow).forEach(header => {
+          allHeaders.add(header);
+        });
+
+        const finalHeaders = Array.from(allHeaders);
         
         const ws = fs.createWriteStream(csvFilePath);
-        const csvStream = csv.format({ headers });
+        const csvStream = csv.format({ headers: finalHeaders });
 
         csvStream.pipe(ws).on('finish', () => {
             res.status(200).send('Data saved successfully');
