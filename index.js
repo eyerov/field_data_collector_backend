@@ -86,6 +86,22 @@ app.post('/data', (req, res) => {
     }
 });
 
+app.post('/divelog', (req, res) => {
+    const diveLogData = req.body;
+    const diveNo = diveLogData.diveNo || 'dive';
+    const projNo = diveLogData.projNo || 'project';
+    const filename = `${projNo}_${diveNo}.json`;
+    const filePath = path.join(__dirname, filename);
+
+    fs.writeFile(filePath, JSON.stringify(diveLogData, null, 2), (err) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error saving dive log.');
+        }
+        res.status(200).send('Dive log saved successfully.');
+    });
+});
+
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
