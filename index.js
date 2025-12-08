@@ -4,6 +4,13 @@ const fs = require('fs');
 const path = require('path');
 const csv = require('fast-csv');
 
+const dataDir = path.join(__dirname, '..', 'data');
+
+// Ensure the data directory exists
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+}
+
 const app = express();
 const port = 3001;
 
@@ -19,7 +26,7 @@ app.post('/data', (req, res) => {
 
     // Basic security measure to prevent directory traversal
     const safeFilename = path.basename(fileName);
-    const csvFilePath = path.join(__dirname, safeFilename);
+    const csvFilePath = path.join(dataDir, safeFilename);
 
     const flattenedRow = {
         ID: newRowData.id,
@@ -112,7 +119,7 @@ app.post('/divelog', (req, res) => {
     const diveNo = diveLogData.diveNo || 'dive';
     const projNo = diveLogData.projNo || 'project';
     const filename = `${projNo}_${diveNo}.json`;
-    const filePath = path.join(__dirname, filename);
+    const filePath = path.join(dataDir, filename);
 
     fs.writeFile(filePath, JSON.stringify(diveLogData, null, 2), (err) => {
         if (err) {
