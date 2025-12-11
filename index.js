@@ -18,7 +18,7 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/data', (req, res) => {
-    const { fileName, row: newRowData } = req.body;
+    const { fileName, row: newRowData, rows: newRowsData } = req.body;
 
     if (!fileName) {
         return res.status(400).send('Filename is required.');
@@ -27,6 +27,47 @@ app.post('/data', (req, res) => {
     // Basic security measure to prevent directory traversal
     const safeFilename = path.basename(`${fileName}.csv`);
     const csvFilePath = path.join(dataDir, safeFilename);
+
+    if (newRowsData) {
+        // Overwrite the file with new data
+        const flattenedRows = newRowsData.map(row => ({
+            ID: row.id,
+            Timestamp: row.timestamp,
+            Depth: row.depth,
+            Altitude: row.altitude,
+            Event: row.buttonName,
+            Pitch: row.pitch,
+            Roll: row.roll,
+            Heading: row.heading,
+            Latitude: row.lat,
+            Longitude: row.lon,
+            Remarks: row.remarks,
+            ...row.customData,
+        })).reverse();
+
+        const allHeaders = new Set();
+        flattenedRows.forEach(row => {
+          Object.keys(row).forEach(header => {
+            allHeaders.add(header);
+          });
+        });
+
+        const finalHeaders = Array.from(allHeaders);
+        
+        const ws = fs.createWriteStream(csvFilePath);
+        const csvStream = csv.format({ headers: finalHeaders });
+
+        csvStream.pipe(ws).on('finish', () => {
+            res.status(200).send('Data saved successfully');
+        });
+
+        flattenedRows.forEach(row => {
+            csvStream.write(row);
+        });
+
+        csvStream.end();
+        return;
+    }
 
     const flattenedRow = {
         ID: newRowData.id,
